@@ -1,6 +1,6 @@
 const { App } = require('@slack/bolt');
 require('dotenv').config();
-const { searchJiraIssues, getProjectInfo, getRecentUpdates, testConnection } = require('./jiraClient');
+const { searchJiraIssues, getProjectInfo, getRecentUpdates, testConnection, getSprintInfo, getBlockedIssues, getHighPriorityIssues, getTeamWorkload } = require('./jiraClient');
 const { generateAIResponse } = require('./aiHandler');
 
 // Initialize your app with your bot token and signing secret
@@ -59,7 +59,29 @@ app.message(/help/i, async ({ message, client }) => {
     await client.chat.postMessage({
       channel: message.channel,
       thread_ts: message.thread_ts || message.ts,
-      text: '*Here are the commands I understand:*\n• `hello` - I\'ll say hello back\n• `help` - Show this help message\n• `ask [question]` - Ask me anything about your Jira projects\n• `jira-test` - Test the Jira connection\n\nExample questions:\n• "ask what\'s the status of project XYZ?"\n• "ask show me recent updates in project ABC"\n• "ask what tickets are blocked in project DEF?"'
+      text: `*Here are the commands and questions I understand:*
+
+*Basic Commands:*
+• \`hello\` - I'll say hello back
+• \`help\` - Show this help message
+• \`jira-test\` - Test the Jira connection
+
+*Project Questions:*
+• "ask what's the status of project XYZ?"
+• "ask show me recent updates in project ABC"
+• "ask what's happening in the current sprint for project XYZ?"
+• "ask what are the blocked issues in project ABC?"
+• "ask show me high priority issues in project XYZ"
+• "ask what's the team workload in project ABC?"
+
+*Advanced Queries:*
+• "ask what issues are at risk in project XYZ?"
+• "ask summarize the progress in project ABC this week"
+• "ask what's the sprint velocity in project XYZ?"
+• "ask who has the most tasks in project ABC?"
+
+Replace XYZ/ABC with your project key (e.g., R2, BIL, etc.).
+I'll analyze the data and provide concise, organized summaries!`
     });
     console.log('Successfully sent help response');
   } catch (error) {
@@ -129,6 +151,8 @@ app.message(/^ask /i, async ({ message, client }) => {
 
       if (projectKey) {
         console.log('Fetching specific project data for:', projectKey);
+        
+        // Get basic project info
         try {
           jiraData.projectInfo = await getProjectInfo(projectKey);
           console.log('Successfully got project info');
@@ -136,11 +160,51 @@ app.message(/^ask /i, async ({ message, client }) => {
           console.error('Error getting project info:', error);
         }
 
-        try {
-          jiraData.recentUpdates = await getRecentUpdates(projectKey);
-          console.log('Successfully got recent updates');
-        } catch (error) {
-          console.error('Error getting recent updates:', error);
+        // Check what kind of information is being requested
+        if (question.toLowerCase().includes('sprint')) {
+          try {
+            jiraData.sprintInfo = await getSprintInfo(projectKey);
+            console.log('Successfully got sprint info');
+          } catch (error) {
+            console.error('Error getting sprint info:', error);
+          }
+        }
+
+        if (question.toLowerCase().includes('blocked') || question.toLowerCase().includes('impediment')) {
+          try {
+            jiraData.blockedIssues = await getBlockedIssues(projectKey);
+            console.log('Successfully got blocked issues');
+          } catch (error) {
+            console.error('Error getting blocked issues:', error);
+          }
+        }
+
+        if (question.toLowerCase().includes('high priority') || question.toLowerCase().includes('urgent')) {
+          try {
+            jiraData.highPriorityIssues = await getHighPriorityIssues(projectKey);
+            console.log('Successfully got high priority issues');
+          } catch (error) {
+            console.error('Error getting high priority issues:', error);
+          }
+        }
+
+        if (question.toLowerCase().includes('workload') || question.toLowerCase().includes('who has')) {
+          try {
+            jiraData.teamWorkload = await getTeamWorkload(projectKey);
+            console.log('Successfully got team workload');
+          } catch (error) {
+            console.error('Error getting team workload:', error);
+          }
+        }
+
+        // Always get recent updates as fallback
+        if (Object.keys(jiraData).length === 1) { // Only has projectInfo
+          try {
+            jiraData.recentUpdates = await getRecentUpdates(projectKey);
+            console.log('Successfully got recent updates');
+          } catch (error) {
+            console.error('Error getting recent updates:', error);
+          }
         }
       } else {
         console.log('No specific project mentioned, fetching recent updates across all projects');

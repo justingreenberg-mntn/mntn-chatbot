@@ -97,10 +97,98 @@ async function testConnection() {
   }
 }
 
+async function getSprintInfo(projectKey) {
+  console.log('Attempting to get active sprint info for project:', projectKey);
+  const jql = `project = ${projectKey} AND sprint in openSprints()`;
+  try {
+    console.log('Making Jira API call with JQL:', jql);
+    const issues = await jira.searchJira(jql);
+    console.log(`Successfully retrieved ${issues.issues?.length || 0} sprint issues`);
+    return issues;
+  } catch (error) {
+    console.error('Error getting sprint info:', {
+      projectKey,
+      jql,
+      message: error.message,
+      status: error.statusCode,
+      error: error.error,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
+
+async function getBlockedIssues(projectKey) {
+  console.log('Attempting to get blocked issues for project:', projectKey);
+  const jql = `project = ${projectKey} AND status = Blocked OR Flagged = Impediment`;
+  try {
+    console.log('Making Jira API call with JQL:', jql);
+    const issues = await jira.searchJira(jql);
+    console.log(`Successfully retrieved ${issues.issues?.length || 0} blocked issues`);
+    return issues;
+  } catch (error) {
+    console.error('Error getting blocked issues:', {
+      projectKey,
+      jql,
+      message: error.message,
+      status: error.statusCode,
+      error: error.error,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
+
+async function getHighPriorityIssues(projectKey) {
+  console.log('Attempting to get high priority issues for project:', projectKey);
+  const jql = `project = ${projectKey} AND priority in (Highest, High) AND status not in (Done, Closed)`;
+  try {
+    console.log('Making Jira API call with JQL:', jql);
+    const issues = await jira.searchJira(jql);
+    console.log(`Successfully retrieved ${issues.issues?.length || 0} high priority issues`);
+    return issues;
+  } catch (error) {
+    console.error('Error getting high priority issues:', {
+      projectKey,
+      jql,
+      message: error.message,
+      status: error.statusCode,
+      error: error.error,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
+
+async function getTeamWorkload(projectKey) {
+  console.log('Attempting to get team workload for project:', projectKey);
+  const jql = `project = ${projectKey} AND status not in (Done, Closed) ORDER BY assignee`;
+  try {
+    console.log('Making Jira API call with JQL:', jql);
+    const issues = await jira.searchJira(jql);
+    console.log(`Successfully retrieved ${issues.issues?.length || 0} active issues`);
+    return issues;
+  } catch (error) {
+    console.error('Error getting team workload:', {
+      projectKey,
+      jql,
+      message: error.message,
+      status: error.statusCode,
+      error: error.error,
+      stack: error.stack
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   jira,
   searchJiraIssues,
   getProjectInfo,
   getRecentUpdates,
-  testConnection
+  testConnection,
+  getSprintInfo,
+  getBlockedIssues,
+  getHighPriorityIssues,
+  getTeamWorkload
 }; 
