@@ -1,6 +1,6 @@
 package com.mntn.contextchat.service;
 
-import com.mntn.contextchat.model.JiraProjectDTO;
+import com.mntn.contextchat.model.JiraProjectSearchResponse;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -25,18 +25,18 @@ public class JiraService {
 
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public List<JiraProjectDTO> getAllProjects() {
+    public JiraProjectSearchResponse getAllProjects() {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.set("Authorization", getAuthHeader());
 
         HttpEntity<String> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<List<JiraProjectDTO>> response = restTemplate.exchange(
+        ResponseEntity<JiraProjectSearchResponse> response = restTemplate.exchange(
                 jiraApiUrl,
                 HttpMethod.GET,
                 entity,
-                new ParameterizedTypeReference<List<JiraProjectDTO>>() {}
+                new ParameterizedTypeReference<>() {}
         );
 
         return response.getBody();
