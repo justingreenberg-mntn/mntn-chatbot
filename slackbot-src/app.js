@@ -122,7 +122,7 @@ app.message(/^ask /i, async ({ message, client }) => {
     let jiraData = {};
     try {
       // Get data from all projects or specific project mentioned in the question
-      const projectMatch = question.match(/project\s+([A-Z]+)/i);
+      const projectMatch = question.match(/project\s+([A-Z0-9]+)/i);
       const projectKey = projectMatch ? projectMatch[1].toUpperCase() : null;
 
       console.log('Extracted project key:', projectKey);
